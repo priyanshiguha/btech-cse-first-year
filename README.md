@@ -1,2 +1,9 @@
-# btech-cse-first-year
-My first year BTech CSE projects
+# BTech CSE First Year
+
+Hi, I'm Priyanshi Guha.
+
+This repository contains my first-year BTech CSE projects.
+
+## Projects
+- Calculator
+- Random Password Generator
