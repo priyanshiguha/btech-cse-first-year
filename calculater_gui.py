@@ -3,7 +3,7 @@ import tkinter as tk
 # Create the main calculator window
 root = tk.Tk()
 root.title("Priyanshi's Calculator")
-root.geometry("420x650")
+root.geometry("400x550")
 root.resizable(False, False)
 
 # Set window background
@@ -263,6 +263,14 @@ btn_equal = tk.Button(
 )
 btn_equal.grid(row=3, column=2, padx=5, pady=5)
 
+# Function to clear the display
+def clear_display():
+    global first_number, selected_operator
+
+    display.delete(0, tk.END)
+    first_number = None
+    selected_operator = None
+
 # Clear button
 btn_clear = tk.Button(
     button_frame,
@@ -272,8 +280,7 @@ btn_clear = tk.Button(
     fg="white",
     width=5,
     height=2,   
-    command=lambda: press_operator('C')
-
+    command=clear_display   
 )
 btn_clear.grid(row=4, column=0, padx=5, pady=5)
 
@@ -359,8 +366,6 @@ def calculate():
     display.delete(0, tk.END)
     display.insert(tk.END, str(result)
 )
-
-
 
 # Start the application
 root.mainloop()
