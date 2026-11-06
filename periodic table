@@ -1,0 +1,114 @@
+const grid = document.getElementById("periodic-grid");
+const search = document.getElementById("search");
+const filters = document.getElementById("filters");
+const backdrop = document.getElementById("modal-backdrop");
+let allSkills = [];
+let activeCategory = "All";
+
+const palette = {
+  "Languages": "#c6f36b", "Frontend": "#69e3e8", "Backend": "#8da8ff",
+  "Data": "#f4bd68", "AI & ML": "#c09aff", "Design": "#ff8db8",
+  "Cloud & DevOps": "#78b9ff", "Product": "#f4a66b",
+  "Soft Skills": "#e6d27b", "Tools": "#a7c4d8", "Hardware": "#82d6a4"
+};
+
+async function loadSkills() {
+  try {
+    const response = await fetch("/api/skills");
+    if (!response.ok) throw new Error("Could not load skills");
+    allSkills = await response.json();
+    document.getElementById("total-count").textContent = allSkills.length;
+    render();
+    renderLegend();
+  } catch (error) {
+    grid.innerHTML = '<p class="loading">Could not load the skill elements. Please refresh the page.</p>';
+    console.error(error);
+  }
+}
+
+function render() {
+  const query = search.value.trim().toLowerCase();
+  const filtered = allSkills.filter(skill => {
+    const matchesCategory = activeCategory === "All" || skill.category === activeCategory;
+    const matchesSearch = [skill.name, skill.symbol, skill.category, skill.description]
+      .join(" ").toLowerCase().includes(query);
+    return matchesCategory && matchesSearch;
+  });
+
+  grid.innerHTML = "";
+  if (!filtered.length) {
+    grid.innerHTML = '<p class="loading">No matching elements. Try another search.</p>';
+    return;
+  }
+
+  filtered.forEach(skill => {
+    const button = document.createElement("button");
+    button.className = "element";
+    button.style.setProperty("--accent", palette[skill.category] || "#c6f36b");
+    button.setAttribute("aria-label", `Open ${skill.name} details`);
+    button.innerHTML = `
+      <span class="atomic">${String(skill.number).padStart(2, "0")}</span>
+      <i class="level-dot"></i>
+      <strong class="symbol">${escapeHTML(skill.symbol)}</strong>
+      <span class="name">${escapeHTML(skill.name)}</span>
+      <span class="category">${escapeHTML(skill.category)}</span>`;
+    button.addEventListener("click", () => openModal(skill));
+    grid.appendChild(button);
+  });
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[char]);
+}
+
+function renderLegend() {
+  const categories = [...new Set(allSkills.map(skill => skill.category))];
+  document.getElementById("legend").innerHTML = categories.map(category =>
+    `<span class="legend-item" style="--accent:${palette[category]}"><i></i>${escapeHTML(category.toUpperCase())}</span>`
+  ).join("");
+}
+
+function openModal(skill) {
+  document.getElementById("modal-number").textContent = String(skill.number).padStart(2, "0");
+  document.getElementById("modal-category").textContent = skill.category.toUpperCase();
+  document.getElementById("modal-symbol").textContent = skill.symbol;
+  document.getElementById("modal-name").textContent = skill.name;
+  document.getElementById("modal-level").textContent = skill.level.toUpperCase();
+  document.getElementById("modal-description").textContent = skill.description;
+  document.getElementById("modal-uses").innerHTML = skill.uses.map(use =>
+    `<span>${escapeHTML(use)}</span>`).join("");
+  document.getElementById("modal-starter").textContent = skill.starter;
+  backdrop.classList.add("open");
+  backdrop.setAttribute("aria-hidden", "false");
+  document.getElementById("close-modal").focus();
+}
+
+function closeModal() {
+  backdrop.classList.remove("open");
+  backdrop.setAttribute("aria-hidden", "true");
+}
+
+search.addEventListener("input", render);
+filters.addEventListener("click", event => {
+  const button = event.target.closest("button[data-category]");
+  if (!button) return;
+  activeCategory = button.dataset.category;
+  filters.querySelectorAll(".filter").forEach(item =>
+    item.classList.toggle("active", item === button));
+  render();
+});
+document.getElementById("close-modal").addEventListener("click", closeModal);
+backdrop.addEventListener("click", event => {
+  if (event.target === backdrop) closeModal();
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeModal();
+  if (event.key === "/" && document.activeElement !== search) {
+    event.preventDefault();
+    search.focus();
+  }
+});
+
+loadSkills();
